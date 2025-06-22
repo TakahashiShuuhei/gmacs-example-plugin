@@ -2,9 +2,7 @@ module github.com/TakahashiShuuhei/gmacs-example-plugin
 
 go 1.22.2
 
-require github.com/TakahashiShuuhei/gmacs-plugin-sdk v0.0.0
-
-replace github.com/TakahashiShuuhei/gmacs-plugin-sdk => ../gmacs-plugin-sdk
+require github.com/TakahashiShuuhei/gmacs-plugin-sdk v0.1.0
 
 require (
 	github.com/fatih/color v1.13.0 // indirect
