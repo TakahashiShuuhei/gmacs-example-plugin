@@ -1,16 +1,10 @@
 package main
 
 import (
-	"github.com/hashicorp/go-plugin"
+	pluginsdk "github.com/TakahashiShuuhei/gmacs-plugin-sdk"
 )
 
 func main() {
-	// プラグインのRPCマップにプラグインインスタンスを設定
-	PluginMap["gmacs-plugin"] = &RPCPlugin{Impl: pluginInstance}
-
-	// プラグインサーバーを起動
-	plugin.Serve(&plugin.ServeConfig{
-		HandshakeConfig: Handshake,
-		Plugins:         PluginMap,
-	})
+	// ServePluginヘルパーを使用してプラグインサーバーを起動
+	pluginsdk.ServePlugin(pluginInstance)
 }

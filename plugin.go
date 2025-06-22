@@ -3,119 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
+	"time"
+
+	pluginsdk "github.com/TakahashiShuuhei/gmacs-plugin-sdk"
 )
-
-// プラグインインターフェースの定義（gmacs/plugin/interface.goから移植）
-
-// Plugin は全プラグインが実装すべき基本インターフェース
-type Plugin interface {
-	// プラグイン情報
-	Name() string
-	Version() string
-	Description() string
-	
-	// ライフサイクル
-	Initialize(ctx context.Context, host HostInterface) error
-	Cleanup() error
-	
-	// 機能提供
-	GetCommands() []CommandSpec
-	GetMajorModes() []MajorModeSpec
-	GetMinorModes() []MinorModeSpec
-	GetKeyBindings() []KeyBindingSpec
-}
-
-// HostInterface はホスト（gmacs）がプラグインに提供するAPI
-type HostInterface interface {
-	// エディタ操作
-	GetCurrentBuffer() BufferInterface
-	GetCurrentWindow() WindowInterface
-	SetStatus(message string)
-	ShowMessage(message string)
-	
-	// コマンド実行
-	ExecuteCommand(name string, args ...interface{}) error
-	
-	// モード管理
-	SetMajorMode(bufferName, modeName string) error
-	ToggleMinorMode(bufferName, modeName string) error
-	
-	// イベント・フック
-	AddHook(event string, handler func(...interface{}) error)
-	TriggerHook(event string, args ...interface{})
-	
-	// バッファ操作
-	CreateBuffer(name string) BufferInterface
-	FindBuffer(name string) BufferInterface
-	SwitchToBuffer(name string) error
-	
-	// ファイル操作
-	OpenFile(path string) error
-	SaveBuffer(bufferName string) error
-	
-	// 設定
-	GetOption(name string) (interface{}, error)
-	SetOption(name string, value interface{}) error
-}
-
-// BufferInterface はプラグインからアクセス可能なバッファAPI
-type BufferInterface interface {
-	Name() string
-	Content() string
-	SetContent(content string)
-	InsertAt(pos int, text string)
-	DeleteRange(start, end int)
-	CursorPosition() int
-	SetCursorPosition(pos int)
-	MarkDirty()
-	IsDirty() bool
-	Filename() string
-}
-
-// WindowInterface はプラグインからアクセス可能なウィンドウAPI
-type WindowInterface interface {
-	Buffer() BufferInterface
-	SetBuffer(buffer BufferInterface)
-	Width() int
-	Height() int
-	ScrollOffset() int
-	SetScrollOffset(offset int)
-}
-
-// CommandSpec はプラグインが提供するコマンド仕様
-type CommandSpec struct {
-	Name        string
-	Description string
-	Interactive bool
-	Handler     string // プラグイン内のハンドラー名
-}
-
-// MajorModeSpec はメジャーモード仕様
-type MajorModeSpec struct {
-	Name         string
-	Extensions   []string // 対象ファイル拡張子
-	Description  string
-	KeyBindings  []KeyBindingSpec
-}
-
-// MinorModeSpec はマイナーモード仕様
-type MinorModeSpec struct {
-	Name        string
-	Description string
-	Global      bool // グローバルモードかバッファローカルか
-	KeyBindings []KeyBindingSpec
-}
-
-// KeyBindingSpec はキーバインディング仕様
-type KeyBindingSpec struct {
-	Sequence string // "C-c C-g", "M-x" など
-	Command  string
-	Mode     string // 対象モード（空の場合はグローバル）
-}
 
 // ExamplePlugin はサンプルプラグインの実装
 type ExamplePlugin struct {
-	host HostInterface
+	host   pluginsdk.HostInterface
 	config map[string]interface{}
 }
 
@@ -135,21 +30,23 @@ func (p *ExamplePlugin) Description() string {
 }
 
 // Initialize implements Plugin interface
-func (p *ExamplePlugin) Initialize(ctx context.Context, host HostInterface) error {
+func (p *ExamplePlugin) Initialize(ctx context.Context, host pluginsdk.HostInterface) error {
 	p.host = host
 	p.config = make(map[string]interface{})
-	
+
 	// デフォルト設定
 	p.config["greeting_message"] = "Hello from example plugin!"
 	p.config["auto_greet"] = true
 	p.config["prefix"] = "[EXAMPLE]"
-	
+
 	// プラグイン初期化完了メッセージ
 	if p.config["auto_greet"].(bool) {
 		message := fmt.Sprintf("%s %s", p.config["prefix"], p.config["greeting_message"])
-		host.ShowMessage(message)
+		if host != nil {
+			host.ShowMessage(message)
+		}
 	}
-	
+
 	return nil
 }
 
@@ -162,8 +59,8 @@ func (p *ExamplePlugin) Cleanup() error {
 }
 
 // GetCommands implements Plugin interface
-func (p *ExamplePlugin) GetCommands() []CommandSpec {
-	return []CommandSpec{
+func (p *ExamplePlugin) GetCommands() []pluginsdk.CommandSpec {
+	return []pluginsdk.CommandSpec{
 		{
 			Name:        "example-greet",
 			Description: "Display a greeting message from the example plugin",
@@ -186,13 +83,13 @@ func (p *ExamplePlugin) GetCommands() []CommandSpec {
 }
 
 // GetMajorModes implements Plugin interface
-func (p *ExamplePlugin) GetMajorModes() []MajorModeSpec {
-	return []MajorModeSpec{
+func (p *ExamplePlugin) GetMajorModes() []pluginsdk.MajorModeSpec {
+	return []pluginsdk.MajorModeSpec{
 		{
 			Name:        "example-mode",
 			Extensions:  []string{".example", ".ex"},
 			Description: "Example file mode with basic syntax highlighting",
-			KeyBindings: []KeyBindingSpec{
+			KeyBindings: []pluginsdk.KeyBindingSpec{
 				{
 					Sequence: "C-c C-e",
 					Command:  "example-greet",
@@ -204,13 +101,13 @@ func (p *ExamplePlugin) GetMajorModes() []MajorModeSpec {
 }
 
 // GetMinorModes implements Plugin interface
-func (p *ExamplePlugin) GetMinorModes() []MinorModeSpec {
-	return []MinorModeSpec{
+func (p *ExamplePlugin) GetMinorModes() []pluginsdk.MinorModeSpec {
+	return []pluginsdk.MinorModeSpec{
 		{
 			Name:        "example-minor-mode",
 			Description: "Example minor mode that adds helpful features",
 			Global:      false, // バッファローカル
-			KeyBindings: []KeyBindingSpec{
+			KeyBindings: []pluginsdk.KeyBindingSpec{
 				{
 					Sequence: "C-c e",
 					Command:  "example-insert-timestamp",
@@ -222,8 +119,8 @@ func (p *ExamplePlugin) GetMinorModes() []MinorModeSpec {
 }
 
 // GetKeyBindings implements Plugin interface
-func (p *ExamplePlugin) GetKeyBindings() []KeyBindingSpec {
-	return []KeyBindingSpec{
+func (p *ExamplePlugin) GetKeyBindings() []pluginsdk.KeyBindingSpec {
+	return []pluginsdk.KeyBindingSpec{
 		{
 			Sequence: "C-c C-x e",
 			Command:  "example-greet",
@@ -237,5 +134,34 @@ func (p *ExamplePlugin) GetKeyBindings() []KeyBindingSpec {
 	}
 }
 
-// プラグイン設定の共通化された実装
+// プラグインコマンドハンドラー（デモ用）
+func (p *ExamplePlugin) HandleGreet() error {
+	if p.host != nil {
+		message := fmt.Sprintf("%s %s", p.config["prefix"], p.config["greeting_message"])
+		p.host.ShowMessage(message)
+	}
+	return nil
+}
+
+func (p *ExamplePlugin) HandleInfo() error {
+	if p.host != nil {
+		info := fmt.Sprintf("[EXAMPLE] %s v%s - %s", p.Name(), p.Version(), p.Description())
+		p.host.ShowMessage(info)
+	}
+	return nil
+}
+
+func (p *ExamplePlugin) HandleInsertTimestamp() error {
+	if p.host != nil {
+		buffer := p.host.GetCurrentBuffer()
+		if buffer != nil {
+			timestamp := time.Now().Format("2006-01-02 15:04:05")
+			pos := buffer.CursorPosition()
+			buffer.InsertAt(pos, timestamp)
+		}
+	}
+	return nil
+}
+
+// プラグインインスタンス
 var pluginInstance = &ExamplePlugin{}
