@@ -1,0 +1,14 @@
+{
+  "name": "example-plugin",
+  "version": "1.0.0",
+  "description": "A simple example plugin for gmacs demonstrating basic functionality",
+  "author": "gmacs team",
+  "binary": "example-plugin",
+  "dependencies": [],
+  "min_gmacs_version": "0.1.0",
+  "default_config": {
+    "greeting_message": "Hello from example plugin!",
+    "auto_greet": true,
+    "prefix": "[EXAMPLE]"
+  }
+}
