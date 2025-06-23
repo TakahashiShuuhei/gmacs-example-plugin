@@ -170,11 +170,13 @@ func min(a, b int) int {
 
 // プラグインコマンドハンドラー（デモ用）
 func (p *ExamplePlugin) HandleGreet() error {
+	message := fmt.Sprintf("%s %s", p.config["prefix"], p.config["greeting_message"])
 	if p.host != nil {
-		message := fmt.Sprintf("%s %s", p.config["prefix"], p.config["greeting_message"])
 		p.host.ShowMessage(message)
 	}
-	return nil
+	// For now, return the message as a formatted error to display it
+	// This is a temporary workaround until proper RPC host messaging is implemented
+	return fmt.Errorf("SUCCESS: %s", message)
 }
 
 func (p *ExamplePlugin) HandleInfo() error {
