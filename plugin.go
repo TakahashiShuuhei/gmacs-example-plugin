@@ -134,6 +134,40 @@ func (p *ExamplePlugin) GetKeyBindings() []pluginsdk.KeyBindingSpec {
 	}
 }
 
+// CommandPlugin interface implementation
+func (p *ExamplePlugin) ExecuteCommand(name string, args ...interface{}) error {
+	switch name {
+	case "example-greet":
+		return p.HandleGreet()
+	case "example-info":
+		return p.HandleInfo()
+	case "example-insert-timestamp":
+		return p.HandleInsertTimestamp()
+	default:
+		return fmt.Errorf("unknown command: %s", name)
+	}
+}
+
+func (p *ExamplePlugin) GetCompletions(command string, prefix string) []string {
+	// Return command completion suggestions
+	commands := []string{"example-greet", "example-info", "example-insert-timestamp"}
+	var completions []string
+	for _, cmd := range commands {
+		if len(prefix) == 0 || cmd[:min(len(cmd), len(prefix))] == prefix {
+			completions = append(completions, cmd)
+		}
+	}
+	return completions
+}
+
+// Helper function for min
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // プラグインコマンドハンドラー（デモ用）
 func (p *ExamplePlugin) HandleGreet() error {
 	if p.host != nil {
