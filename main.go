@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/rpc"
 	"github.com/hashicorp/go-plugin"
 	pluginsdk "github.com/TakahashiShuuhei/gmacs-plugin-sdk"
@@ -51,9 +52,35 @@ func (s *RPCServer) Description(args interface{}, resp *string) error {
 }
 
 func (s *RPCServer) Initialize(args map[string]interface{}, resp *error) error {
-	*resp = s.Impl.Initialize(nil, nil) // Simplified for now
+	// Create a simple host interface implementation for now
+	hostImpl := &SimpleHostInterface{}
+	*resp = s.Impl.Initialize(context.Background(), hostImpl)
 	return nil
 }
+
+// SimpleHostInterface is a basic implementation of HostInterface for the plugin
+type SimpleHostInterface struct{}
+
+func (h *SimpleHostInterface) GetCurrentBuffer() pluginsdk.BufferInterface { return nil }
+func (h *SimpleHostInterface) GetCurrentWindow() pluginsdk.WindowInterface { return nil }
+func (h *SimpleHostInterface) SetStatus(message string)                     {}
+func (h *SimpleHostInterface) ShowMessage(message string)                   {}
+func (h *SimpleHostInterface) ExecuteCommand(name string, args ...interface{}) error {
+	return nil
+}
+func (h *SimpleHostInterface) SetMajorMode(bufferName, modeName string) error { return nil }
+func (h *SimpleHostInterface) ToggleMinorMode(bufferName, modeName string) error {
+	return nil
+}
+func (h *SimpleHostInterface) AddHook(event string, handler func(...interface{}) error) {}
+func (h *SimpleHostInterface) TriggerHook(event string, args ...interface{})             {}
+func (h *SimpleHostInterface) CreateBuffer(name string) pluginsdk.BufferInterface       { return nil }
+func (h *SimpleHostInterface) FindBuffer(name string) pluginsdk.BufferInterface         { return nil }
+func (h *SimpleHostInterface) SwitchToBuffer(name string) error                         { return nil }
+func (h *SimpleHostInterface) OpenFile(path string) error                               { return nil }
+func (h *SimpleHostInterface) SaveBuffer(bufferName string) error                       { return nil }
+func (h *SimpleHostInterface) GetOption(name string) (interface{}, error)               { return nil, nil }
+func (h *SimpleHostInterface) SetOption(name string, value interface{}) error           { return nil }
 
 func (s *RPCServer) Cleanup(args interface{}, resp *error) error {
 	*resp = s.Impl.Cleanup()
